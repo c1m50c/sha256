@@ -47,6 +47,53 @@ def encode(message: Union[str, bytes, bytearray]) -> str:
     chunks: List[bytearray] = [  ]
     for i in range(0, len(message_arr), 64):
         chunks.append(message_arr[i : i + 64])
+    
+    
+    # Set Intial Hash Values ~ Spec 5.3.2 #
+    hash_table: List[int] = [
+        0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
+        0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19,
+    ]
+    
+    
+    # Computation ~ Spec 6.2.2 #
+    for c in chunks:
+        w: List[int] = [  ]
+        
+        for t in range(0, 64):
+            if t <= 15:
+                w.append(c[t])
+            else:
+                w.append((lc_sigma_1(w[t - 2]) + w[t - 7] + lc_sigma_0(w[t - 15]) + w[t - 16]) % ADDITION_MODULO)
+        
+        assert len(w) == 64, "Could not properly created a message schedule."
+        
+        a = hash_table[0]
+        b = hash_table[1]
+        c = hash_table[2]
+        d = hash_table[3]
+        e = hash_table[4]
+        f = hash_table[5]
+        g = hash_table[6]
+        h = hash_table[7]
+        
+        for t in range(0, 64):
+            t1: int = (h + sigma_1(e) + ch(e, f, g) + K[t] + w[t]) % ADDITION_MODULO
+            t2: int = (sigma_0(a) + maj(a, b, c)) % ADDITION_MODULO
+            
+            h, g, f = g, f, e
+            e = (d + t1) % ADDITION_MODULO
+            d, c, b = c, b, a
+            a = (t1 + t2) % ADDITION_MODULO
+        
+        hash_table[0] = (a + hash_table[0]) % ADDITION_MODULO
+        hash_table[1] = (b + hash_table[1]) % ADDITION_MODULO
+        hash_table[2] = (c + hash_table[2]) % ADDITION_MODULO
+        hash_table[3] = (d + hash_table[3]) % ADDITION_MODULO
+        hash_table[4] = (e + hash_table[4]) % ADDITION_MODULO
+        hash_table[5] = (f + hash_table[5]) % ADDITION_MODULO
+        hash_table[6] = (g + hash_table[6]) % ADDITION_MODULO
+        hash_table[7] = (h + hash_table[7]) % ADDITION_MODULO
 
 
 # Helper Functions ~ Spec 4.1.2 #
