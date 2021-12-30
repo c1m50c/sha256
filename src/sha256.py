@@ -18,7 +18,7 @@ K: List[int] = [
 ]
 
 
-def encode(message: Union[str, bytes, bytearray]) -> str:
+def encode(message: Union[str, bytes, bytearray]) -> bytearray:
     message_arr = message
     
     # Type Checking #
@@ -95,12 +95,12 @@ def encode(message: Union[str, bytes, bytearray]) -> str:
         hash_table[4].to_bytes(4, "big") + hash_table[5].to_bytes(4, "big") + \
         hash_table[6].to_bytes(4, "big") + hash_table[7].to_bytes(4, "big")
     
-    return result.hex()
+    return result
 
 
 # Helper Functions ~ Spec 4.1.2 #
 rotate_right = lambda x, n : (x >> n) | (x << WORD_BITS - n)
-rotate_left = lambda x, n : (x << n) | (x >> WORD_BITS - n)
+# rotate_left = lambda x, n : (x << n) | (x >> WORD_BITS - n)
 ch = lambda x, y, z : (x & y) ^ (x & z)
 maj = lambda x, y, z : (x & y) ^ (x & z) ^ (y & z)
 sigma_0 = lambda x : rotate_right(x, 2) ^ rotate_right(x, 13) ^ rotate_right(x, 22)
