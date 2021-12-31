@@ -12,14 +12,14 @@ def main() -> None:
         if inp.isspace() or not inp:
             return
         
-        encoded_hex: str = encode(inp).hex()
-        spaced_hex: List[str] = map("".join, zip(*[iter(encoded_hex)] * 8))
+        encoded: str = encode(inp)
+        spaced_hex: List[str] = map("".join, zip(*[iter(encoded.hex())] * 8))
         
         for index, value in enumerate(spaced_hex):
             if index % 2 == 0:
-                console.print(f"[bold yellow]{value}[/bold yellow]", end="")
+                console.print(f"[bold blue]{value}[/bold blue]", end="")
             else:
-                console.print(f"[yellow]{value}[/yellow]", end="")
+                console.print(f"[blue]{value}[/blue]", end="")
         
         console.print("")
 

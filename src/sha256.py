@@ -1,3 +1,5 @@
+# FIXME: Encoding is not properly hashing the given input.
+
 from typing import List, Union
 
 
@@ -18,8 +20,8 @@ K: List[int] = [
 ]
 
 
-def encode(message: Union[str, bytes, bytearray]) -> bytearray:
-    message_arr = message
+def encode(message: Union[str, bytes, bytearray]) -> bytes:
+    message_arr: bytearray = message
     
     # Type Checking #
     if isinstance(message, str):
@@ -31,26 +33,23 @@ def encode(message: Union[str, bytes, bytearray]) -> bytearray:
     
     
     # Padding ~ Spec 5.1.1 #
-    message_length = len(message_arr) * 8
-    message_arr.append(0x80)
+    message_length: int = len(message_arr) * 8
+    message_arr.append(0x01)
     
     while (len(message_arr) * 8 + 64) % 512 != 0:
         message_arr.append(0x00)
     
-    for b in message_length.to_bytes(8, "big"):
-        message_arr.append(b)
+    message_arr += message_length.to_bytes(8, "big")
     
     assert (len(message_arr) * 8) % 512 == 0, "Message could not be properly padded."
     
     
     # Parsing ~ Spec 5.2.1 #
-    chunks = [  ]
-    for i in range(0, len(message_arr), 64):
-        chunks.append(message_arr[i : i + 64])
+    chunks: List[bytearray] = [ message_arr[i : i + 64] for i in range(0, len(message_arr), 64) ]
     
     
     # Set Intial Hash Values ~ Spec 5.3.2 #
-    hash_table = [
+    hash_table: List[int] = [
         0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
         0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19,
     ]
@@ -58,14 +57,14 @@ def encode(message: Union[str, bytes, bytearray]) -> bytearray:
     
     # Computation ~ Spec 6.2.2 #
     for c in chunks:
-        w = [  ]
+        w: List[bytes] = [  ]
         
         for t in range(0, 64):
             if t <= 15:
                 w.append(bytes(c[t * 4 : (t * 4) + 4]))
             else:
-                x = sigma_1(int.from_bytes(w[t - 2], "big")) + int.from_bytes(w[t - 7], "big") + \
-                    sigma_0(int.from_bytes(w[t - 15], "big")) + int.from_bytes(w[t - 16], "big")
+                x: int = lc_sigma_1(int.from_bytes(w[t - 2], "big")) + int.from_bytes(w[t - 7], "big") + \
+                    lc_sigma_0(int.from_bytes(w[t - 15], "big")) + int.from_bytes(w[t - 16], "big")
                 w.append((x % ADDITION_MODULO).to_bytes(4, "big"))
         
         assert len(w) == 64, "Could not properly create a message schedule."
@@ -73,8 +72,8 @@ def encode(message: Union[str, bytes, bytearray]) -> bytearray:
         a, b, c, d, e, f, g, h = hash_table
         
         for t in range(0, 64):
-            t1 = (h + sigma_1(e) + ch(e, f, g) + K[t] + int.from_bytes(w[t], "big")) % ADDITION_MODULO
-            t2 = (sigma_0(a) + maj(a, b, c)) % ADDITION_MODULO
+            t1: int = (h + sigma_1(e) + ch(e, f, g) + K[t] + int.from_bytes(w[t], "big")) % ADDITION_MODULO
+            t2: int = (sigma_0(a) + maj(a, b, c)) % ADDITION_MODULO
             
             h, g, f = g, f, e
             e = (d + t1) % ADDITION_MODULO
@@ -90,7 +89,7 @@ def encode(message: Union[str, bytes, bytearray]) -> bytearray:
         hash_table[6] = (g + hash_table[6]) % ADDITION_MODULO
         hash_table[7] = (h + hash_table[7]) % ADDITION_MODULO
     
-    result = hash_table[0].to_bytes(4, "big") + hash_table[1].to_bytes(4, "big") + \
+    result: bytes = hash_table[0].to_bytes(4, "big") + hash_table[1].to_bytes(4, "big") + \
         hash_table[2].to_bytes(4, "big") + hash_table[3].to_bytes(4, "big") + \
         hash_table[4].to_bytes(4, "big") + hash_table[5].to_bytes(4, "big") + \
         hash_table[6].to_bytes(4, "big") + hash_table[7].to_bytes(4, "big")
